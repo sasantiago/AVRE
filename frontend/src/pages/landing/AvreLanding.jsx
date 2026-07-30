@@ -73,10 +73,11 @@ const WhatsAppIcon = () => (
 function Brand() {
   return (
     <a href="#top" className="group flex items-center gap-2.5" aria-label="AVRE Capital Group — inicio">
-      {/* COPY: reemplazar por el logo real cuando esté listo */}
-      <div className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-500 text-[15px] font-bold text-white shadow-lg shadow-indigo-500/40 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
-        A
-      </div>
+      <img
+        src="/brand/avre-mark.png"
+        alt="AVRE"
+        className="h-9 w-auto flex-none drop-shadow-[0_2px_10px_rgba(99,102,241,0.45)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
+      />
       <span className="flex flex-col leading-none">
         <strong className="text-[15px] font-bold tracking-tight">AVRE</strong>
         <span className="mt-0.5 text-[10.5px] uppercase tracking-[0.1em] text-slate-500">Capital Group</span>
@@ -567,11 +568,13 @@ export default function AvreLanding() {
             y acompañamiento real
           </h1>
           {/* COPY: Subheadline — qué es, para quién, qué resuelve */}
-          <p className="mx-auto mb-10 max-w-xl text-lg text-slate-400">
-            AVRE Capital Group es un ecosistema inteligente de gestión, administración y diversificación de
-            capital para mayores de 18 años, con acceso en tiempo real a Forex, criptomonedas, acciones y otros
-            activos financieros.
-          </p>
+          <div className={`${GLASS} animate-float mx-auto mb-10 max-w-xl px-7 py-6 sm:px-9`}>
+            <p className="text-lg text-slate-300">
+              AVRE Capital Group es un ecosistema inteligente de gestión, administración y diversificación de
+              capital para mayores de 18 años, con acceso en tiempo real a Forex, criptomonedas, acciones y otros
+              activos financieros.
+            </p>
+          </div>
           <CtaButton />
           <CtaNote />
           <span className="mt-7 block text-[11px] tracking-wide text-slate-600">

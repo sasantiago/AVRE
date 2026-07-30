@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Secrets / claves de desarrollo
+infra/keys/*.pem
+infra/keys/*.key
+
+# Coverage / tests
+coverage/
+frontend/coverage/
+backend/coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma
+backend/prisma/*.db
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Claude Code local settings (machine-specific, not shared)
+.claude/settings.local.json

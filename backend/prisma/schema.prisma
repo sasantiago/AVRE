@@ -1,0 +1,202 @@
+// AVRE Capital Group — schema Prisma (Fases 0-2: tenants, auth, onboarding, auditoría)
+//
+// Notas de diseño:
+// - Todas las tablas de negocio llevan tenantId + Row-Level Security (ver migración SQL
+//   manual agregada después de la migración inicial, docs/adr/0001-rls-tenant-context.md).
+// - Los ids son UUIDv7 generados en la capa de aplicación (backend/src/common/utils/uuid.ts),
+//   no un default de Postgres/Prisma — por eso no llevan @default(uuid()).
+// - DATABASE_URL corre como avre_app (runtime, sin BYPASSRLS). MIGRATE_DATABASE_URL corre
+//   como avre_migrator (owner, usado solo por `prisma migrate` y el seed).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("MIGRATE_DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ADVISOR
+  CLIENT
+}
+
+// Sección 6.2 del doc de requerimientos. Solo tiene sentido de negocio para
+// usuarios CLIENT — ADMIN/ADVISOR quedan con el default sin usarlo.
+enum AccountStatus {
+  ACTIVE               // activo
+  DELINQUENT           // en mora
+  WITHDRAWAL_PENDING    // en proceso de retiro
+  CLOSED                // finalizado
+}
+
+model Tenant {
+  id        String   @id @db.Uuid
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  users                 User[]
+  refreshTokens         RefreshToken[]
+  totpSecrets           TotpSecret[]
+  passwordResetTokens   PasswordResetToken[]
+  discretionaryAgreements DiscretionaryAgreement[]
+  agreementAcceptances  AgreementAcceptance[]
+  auditLogs             AuditLog[]
+}
+
+model User {
+  id        String   @id @db.Uuid
+  tenantId  String   @db.Uuid
+  email     String
+  passwordHash String
+  fullName  String
+  role      Role     @default(CLIENT)
+
+  totpEnabled Boolean @default(false)
+
+  // Denormalizado para checks rápidos del AgreementAcceptedGuard; la fuente de verdad
+  // histórica es AgreementAcceptance. Null = nunca aceptó ninguna versión.
+  agreementAcceptedVersionId String? @db.Uuid
+
+  // Cartera de clientes por asesor (sección 5/6.2): un CLIENT tiene a lo sumo un
+  // ADVISOR asignado. El scoping "un asesor no ve clientes de otros asesores" se
+  // aplica a nivel de aplicación (WHERE advisorId = <asesor logueado>), no vía RLS
+  // de Postgres — RLS ya resuelve el aislamiento por tenant_id; esto es una regla
+  // de negocio dentro del mismo tenant.
+  advisorId     String?       @db.Uuid
+  accountStatus AccountStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  advisor User?  @relation("AdvisorClients", fields: [advisorId], references: [id])
+  clients User[] @relation("AdvisorClients")
+
+  refreshTokens       RefreshToken[]
+  totpSecret          TotpSecret?
+  passwordResetTokens PasswordResetToken[]
+  agreementAcceptances AgreementAcceptance[]
+  auditLogs           AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([advisorId])
+}
+
+model RefreshToken {
+  id        String    @id @db.Uuid
+  tenantId  String    @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  // Reuse-detection con ventana de gracia: si llega el token inmediatamente anterior
+  // dentro de REFRESH_TOKEN_REUSE_GRACE_MS, no se trata como compromiso.
+  replacedByTokenId String? @db.Uuid
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model TotpSecret {
+  id       String @id @db.Uuid
+  tenantId String @db.Uuid
+  userId   String @db.Uuid @unique
+
+  // Cifrado AES-256-GCM (TOTP_ENCRYPTION_KEY) — nunca en claro, a diferencia de un hash
+  // de password acá sí hace falta poder recuperar el valor original para validar el código.
+  secretCiphertext String
+  secretIv         String
+  secretAuthTag    String
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+}
+
+model PasswordResetToken {
+  id        String    @id @db.Uuid
+  tenantId  String    @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model DiscretionaryAgreement {
+  id          String   @id @db.Uuid
+  tenantId    String   @db.Uuid
+  version     String
+  // SHA-256 del contenido — permite probar exactamente qué texto se aceptó, incluso
+  // si "content" llegara a mostrarse distinto por un bug de render en el futuro.
+  contentHash String
+  // Texto placeholder — pendiente de revisión legal (ver sección 12 del doc de requerimientos).
+  content     String
+  isActive    Boolean  @default(false)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id])
+  acceptances AgreementAcceptance[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+model AgreementAcceptance {
+  id                 String   @id @db.Uuid
+  tenantId           String   @db.Uuid
+  userId             String   @db.Uuid
+  agreementVersionId String   @db.Uuid
+  acceptedAt         DateTime @default(now())
+  // Capturados server-side (req.ip / req.headers['user-agent']), nunca desde el body.
+  ipAddress          String
+  userAgent          String
+
+  tenant    Tenant                  @relation(fields: [tenantId], references: [id])
+  user      User                    @relation(fields: [userId], references: [id])
+  agreement DiscretionaryAgreement  @relation(fields: [agreementVersionId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id           String   @id @db.Uuid
+  tenantId     String   @db.Uuid
+  // Null = acción de sistema, no de un usuario autenticado.
+  actorUserId  String?  @db.Uuid
+  // String (no enum) a propósito: nuevos módulos agregan tipos de acción sin migración
+  // (Open/Closed) — ej. LOGIN_SUCCESS, LOGIN_FAILED, AGREEMENT_ACCEPTED.
+  action       String
+  targetType   String?
+  targetId     String?  @db.Uuid
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  actor  User?  @relation(fields: [actorUserId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, action])
+}
