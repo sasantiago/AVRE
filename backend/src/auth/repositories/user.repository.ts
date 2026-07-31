@@ -1,7 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { AccountStatus, Role, User } from '@prisma/client';
+import {
+  AccountStatus,
+  ChainNetwork,
+  ClientPackage,
+  ContractType,
+  Role,
+  User,
+} from '@prisma/client';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 import { generateId } from '../../common/utils/uuid';
+
+export interface UpdateProfileInput {
+  country?: string | null;
+  phoneNumber?: string | null;
+  withdrawalWalletAddress?: string | null;
+  withdrawalWalletNetwork?: ChainNetwork | null;
+  // Se setea junto con withdrawalWalletAddress cuando cambia — nunca de forma
+  // independiente (ver ProfileService, que es el único caller que la toca).
+  withdrawalWalletUpdatedAt?: Date;
+  contractType?: ContractType | null;
+  clientPackage?: ClientPackage | null;
+  avatarUrl?: string | null;
+}
 
 export interface CreateUserInput {
   tenantId: string;
@@ -76,7 +96,9 @@ export class UserRepository {
   }
 
   async updateAccountStatus(userId: string, accountStatus: AccountStatus): Promise<User> {
-    return this.tenantContext.getTx().user.update({ where: { id: userId }, data: { accountStatus } });
+    return this.tenantContext
+      .getTx()
+      .user.update({ where: { id: userId }, data: { accountStatus } });
   }
 
   // Cartera del asesor — scoping de negocio explícito (no RLS, ver comentario en schema.prisma).
@@ -88,6 +110,16 @@ export class UserRepository {
   }
 
   async findByIdForAdvisor(id: string, advisorId: string): Promise<User | null> {
-    return this.tenantContext.getTx().user.findFirst({ where: { id, advisorId, role: Role.CLIENT } });
+    return this.tenantContext
+      .getTx()
+      .user.findFirst({ where: { id, advisorId, role: Role.CLIENT } });
+  }
+
+  // Perfil ampliado (Fase 3, §2): país, teléfono, wallet de retiro, tipo de
+  // contrato, paquete comercial. NUNCA acepta cashBalanceUsd — esa columna solo
+  // la muta LedgerRepository.appendEntry (§5.1, §11.2 caso "cualquier rol
+  // intentando escribir cashBalanceUsd directamente").
+  async updateProfile(userId: string, input: UpdateProfileInput): Promise<User> {
+    return this.tenantContext.getTx().user.update({ where: { id: userId }, data: input });
   }
 }

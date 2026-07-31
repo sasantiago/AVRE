@@ -7,9 +7,11 @@ import {
 } from '@nestjs/common';
 import { AccountStatus, Role } from '@prisma/client';
 import { AUDIT_RECORDER, IAuditRecorder } from '../audit/audit.types';
+import { assertAvatarSize, assertWalletFieldsPaired } from '../profile/profile.validation';
 import { hashPassword } from '../common/utils/password.util';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 import { UserRepository } from '../auth/repositories/user.repository';
+import { AdminUpdateProfileDto } from './dto/admin-update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { SafeUser, toSafeUser, toSafeUsers } from './user.presenter';
@@ -100,6 +102,74 @@ export class UsersService {
       metadata: { accountStatus },
     });
     return toSafeUser(user);
+  }
+
+  // Edición de perfil admin-only (§2.2): contractType/clientPackage/wallet de
+  // retiro sobre cualquier usuario del tenant. cashBalanceUsd no está en el DTO
+  // ni acá ni en ningún otro lado — solo LedgerRepository.appendEntry la muta.
+  async updateProfile(
+    actor: AuthenticatedUser,
+    userId: string,
+    dto: AdminUpdateProfileDto,
+  ): Promise<SafeUser> {
+    assertWalletFieldsPaired(dto);
+    if (dto.avatarUrl !== undefined) {
+      assertAvatarSize(dto.avatarUrl);
+    }
+
+    const current = await this.userRepo.findById(userId);
+    if (!current) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const walletChanged =
+      dto.withdrawalWalletAddress !== undefined &&
+      dto.withdrawalWalletAddress !== current.withdrawalWalletAddress;
+
+    const updated = await this.userRepo.updateProfile(userId, {
+      country: dto.country,
+      phoneNumber: dto.phoneNumber,
+      avatarUrl: dto.avatarUrl,
+      withdrawalWalletAddress: dto.withdrawalWalletAddress,
+      withdrawalWalletNetwork: dto.withdrawalWalletNetwork,
+      contractType: dto.contractType,
+      clientPackage: dto.clientPackage,
+      ...(walletChanged ? { withdrawalWalletUpdatedAt: new Date() } : {}),
+    });
+
+    if (walletChanged) {
+      await this.auditRecorder.record({
+        actorUserId: actor.userId,
+        action: 'WITHDRAWAL_WALLET_CHANGED',
+        targetType: 'User',
+        targetId: userId,
+        metadata: {
+          previousAddress: current.withdrawalWalletAddress,
+          newAddress: dto.withdrawalWalletAddress,
+          network: dto.withdrawalWalletNetwork,
+        },
+      });
+    }
+    if (dto.contractType !== undefined && dto.contractType !== current.contractType) {
+      await this.auditRecorder.record({
+        actorUserId: actor.userId,
+        action: 'CONTRACT_TYPE_CHANGED',
+        targetType: 'User',
+        targetId: userId,
+        metadata: { previous: current.contractType, next: dto.contractType },
+      });
+    }
+    if (dto.clientPackage !== undefined && dto.clientPackage !== current.clientPackage) {
+      await this.auditRecorder.record({
+        actorUserId: actor.userId,
+        action: 'CLIENT_PACKAGE_CHANGED',
+        targetType: 'User',
+        targetId: userId,
+        metadata: { previous: current.clientPackage, next: dto.clientPackage },
+      });
+    }
+
+    return toSafeUser(updated);
   }
 
   async getAdvisorPortfolio(advisorId: string): Promise<SafeUser[]> {

@@ -1,10 +1,21 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantContextInterceptor } from '../common/interceptors/tenant-context.interceptor';
+import { AdminUpdateProfileDto } from './dto/admin-update-profile.dto';
 import { AssignAdvisorDto } from './dto/assign-advisor.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
@@ -54,5 +65,14 @@ export class AdminUsersController {
     @Body() dto: UpdateAccountStatusDto,
   ) {
     return this.usersService.updateAccountStatus(actor, id, dto.accountStatus);
+  }
+
+  @Patch(':id/profile')
+  async updateProfile(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(actor, id, dto);
   }
 }

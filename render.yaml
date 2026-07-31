@@ -1,0 +1,150 @@
+databases:
+  - name: avre-postgres
+    databaseName: avre
+    user: avre_migrator
+    plan: starter
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - name: avre-redis
+    type: keyvalue
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  - name: avre-backend
+    type: web
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    # Corre `prisma migrate deploy` contra MIGRATE_DATABASE_URL (rol avre_migrator)
+    # antes de arrancar la nueva instancia. Los roles avre_migrator/avre_app deben
+    # existir de antemano — ver docs/DEPLOY_RENDER.md, paso "Roles de Postgres".
+    preDeployCommand: npx --prefix backend prisma migrate deploy --schema=backend/prisma/schema.prisma
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_PORT
+        value: "3000"
+      # Render termina TLS y actúa como reverse proxy — a diferencia del entorno
+      # local, acá sí hay un proxy real delante del backend.
+      - key: TRUST_PROXY
+        value: "true"
+
+      # ---- Postgres: dos connection strings al mismo avre-postgres, con roles
+      # distintos (avre_migrator vs avre_app). Render solo expone el rol admin
+      # por defecto — completar a mano tras crear los roles (ver runbook).
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATE_DATABASE_URL
+        sync: false
+
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: avre-redis
+          property: connectionString
+
+      # ---- CORS / cookies. Actualizar FRONTEND_ORIGIN cuando el frontend
+      # tenga URL propia. Con front y back en subdominios *.onrender.com
+      # distintos, la cookie de refresh es cross-site: SameSite=None + Secure.
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: COOKIE_DOMAIN
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: "none"
+      - key: REFRESH_TOKEN_COOKIE_NAME
+        value: avre_refresh
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 7d
+      - key: REFRESH_TOKEN_REUSE_GRACE_MS
+        value: "10000"
+
+      # ---- JWT RS256. Los .pem se cargan como Secret Files en el dashboard de
+      # Render (no van en este repo) y quedan montados en /etc/secrets/<archivo>.
+      - key: JWT_PRIVATE_KEY_PATH
+        value: /etc/secrets/jwt-private.pem
+      - key: JWT_PUBLIC_KEY_PATH
+        value: /etc/secrets/jwt-public.pem
+      - key: JWT_ISSUER
+        value: avre-capital-group
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+
+      # ---- TOTP / password reset
+      - key: TOTP_ISSUER
+        value: AVRE Capital Group
+      - key: TOTP_ENCRYPTION_KEY
+        sync: false
+      - key: RESET_TOKEN_EXPIRES_IN
+        value: 30m
+      - key: EMAIL_FROM
+        value: no-reply@avrecapitalgroup.com
+      - key: EMAIL_PROVIDER
+        value: smtp
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+      # ---- Rate limiting
+      - key: AUTH_THROTTLE_LIMIT
+        value: "5"
+      - key: AUTH_THROTTLE_TTL_MS
+        value: "60000"
+
+      # ---- Depósitos cripto (§6 Fase 3)
+      - key: DEPOSIT_WALLET_TRON_TRC20
+        sync: false
+      - key: DEPOSIT_WALLET_POLYGON
+        sync: false
+      - key: USDT_TRC20_CONTRACT_ADDRESS
+        value: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - key: USDC_POLYGON_CONTRACT_ADDRESS
+        value: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+      - key: TRONGRID_API_URL
+        value: https://api.trongrid.io
+      - key: TRONGRID_API_KEY
+        sync: false
+      - key: TRONSCAN_API_URL
+        value: https://apilist.tronscanapi.com/api
+      - key: TRONSCAN_API_KEY
+        sync: false
+      - key: POLYGONSCAN_API_URL
+        value: https://api.etherscan.io/v2/api
+      - key: POLYGONSCAN_API_KEY
+        sync: false
+      - key: POLYGON_RPC_URL
+        value: https://polygon-rpc.com
+      - key: DEPOSIT_MIN_CONFIRMATIONS_TRON
+        value: "20"
+      - key: DEPOSIT_REQUEST_TTL_HOURS
+        value: "24"
+
+      # ---- Mercado / órdenes (§8, §9 Fase 3)
+      - key: FINNHUB_API_URL
+        value: https://finnhub.io/api/v1
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: MARKET_QUOTE_CACHE_TTL_MS
+        value: "15000"
+
+      # ---- Multi-tenancy / seed
+      - key: DEFAULT_TENANT_SLUG
+        value: avre-default
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

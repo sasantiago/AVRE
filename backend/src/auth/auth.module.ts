@@ -48,6 +48,9 @@ import { TotpService } from './totp.service';
     PasswordResetTokenRepository,
     { provide: EMAIL_SENDER, useClass: NodemailerEmailSender },
   ],
-  exports: [AuthService, UserRepository],
+  // EMAIL_SENDER exportado: además de PasswordResetService (dentro de este módulo),
+  // otros módulos de negocio (deposits, y a futuro withdrawals) necesitan enviar
+  // notificaciones transaccionales con el mismo sender.
+  exports: [AuthService, UserRepository, EMAIL_SENDER],
 })
 export class AuthModule {}

@@ -1,12 +1,16 @@
-// AVRE Capital Group — schema Prisma (Fases 0-2: tenants, auth, onboarding, auditoría)
+// AVRE Capital Group — schema Prisma (Fases 0-2: tenants, auth, onboarding, auditoría;
+// Fase 3: modelo de dinero, acuerdo de gestión, perfil ampliado — ver docs/requerimientos
+// Fase 3 v3.0).
 //
 // Notas de diseño:
 // - Todas las tablas de negocio llevan tenantId + Row-Level Security (ver migración SQL
 //   manual agregada después de la migración inicial, docs/adr/0001-rls-tenant-context.md).
+//   Excepción: Instrument es un catálogo global sin tenantId (ver §9.1 del doc Fase 3).
 // - Los ids son UUIDv7 generados en la capa de aplicación (backend/src/common/utils/uuid.ts),
 //   no un default de Postgres/Prisma — por eso no llevan @default(uuid()).
 // - DATABASE_URL corre como avre_app (runtime, sin BYPASSRLS). MIGRATE_DATABASE_URL corre
 //   como avre_migrator (owner, usado solo por `prisma migrate` y el seed).
+// - Todo monto monetario o cantidad es Decimal(18,8) — nunca Float (§5.2 del doc Fase 3).
 
 generator client {
   provider = "prisma-client-js"
@@ -33,28 +37,110 @@ enum AccountStatus {
   CLOSED                // finalizado
 }
 
+// Instrumento que opera el asesor/cliente: acciones o divisas (sección "servicios"
+// etapa 2). Se guarda tanto en User (qué opera el asesor/cliente) como en
+// Instrument (clase de activo del catálogo).
+enum ContractType {
+  STOCKS  // acciones
+  FOREX   // divisas
+  MIXED   // ambos
+}
+
+// Paquete/plan comercial del cliente — define condiciones de gestión discrecional.
+// Placeholder de 3 niveles hasta que el área comercial confirme nombres/condiciones
+// definitivas (pendiente de validar, igual que DiscretionaryAgreement.content).
+enum ClientPackage {
+  BASIC
+  GROWTH
+  PREMIUM
+}
+
+enum ChainNetwork {
+  TRON_TRC20   // USDT sobre TRON, verificado vía TronGrid + TronScan
+  POLYGON      // USDC sobre Polygon, verificado vía Polygonscan
+}
+
+// Máquina de estados del §6.2 (doc Fase 3). La verificación automática es
+// precondición de la revisión humana, no reemplazo (§6.1).
+enum DepositStatus {
+  PENDING_TX             // creado, esperando que el cliente envíe el hash
+  PENDING_CONFIRMATIONS  // hash recibido y verificado, esperando finalidad de bloque
+  PENDING_REVIEW         // verificado y confirmado, en cola de revisión humana
+  APPROVED                // aprobado, saldo acreditado en el ledger
+  REJECTED                // rechazado por asesor o admin, con motivo
+  FAILED                  // la verificación automática no pasó
+  EXPIRED                 // venció el TTL sin recibir hash
+}
+
+// Tipos de asiento del ledger append-only (§5.1).
+enum LedgerEntryType {
+  DEPOSIT
+  BUY
+  SELL
+  WITHDRAWAL
+  PENALTY
+  ADJUSTMENT
+}
+
+// Estados del Acuerdo de Gestión Discrecional (§3.2).
+enum AgreementStatus {
+  ACTIVE     // plazo en curso, endDate en el futuro
+  FULFILLED  // se alcanzó endDate sin retiro definitivo anticipado
+  BREACHED   // el cliente ejecutó un retiro definitivo antes de endDate
+  RENEWED    // cumplido y renovado: se cierra y se crea uno nuevo encadenado
+  CLOSED     // cumplido y liquidado: el cliente retiró todo y no renovó
+}
+
+enum WithdrawalType {
+  PARTIAL  // acuerdo sigue ACTIVE, sin penalidad
+  FINAL    // cierra el acuerdo (BREACHED/CLOSED/RENEWED según corresponda)
+}
+
+// Máquina de estados del §7.4.
+enum WithdrawalStatus {
+  PENDING_REVIEW  // solicitud creada, monto reservado, en cola de asesor o admin
+  APPROVED         // aprobada, pendiente de ejecutar la transferencia on-chain
+  PROCESSING       // transferencia enviada, esperando confirmaciones
+  COMPLETED        // transferencia confirmada, con txHash de salida
+  REJECTED         // rechazada con motivo obligatorio; se libera la reserva
+  CANCELLED        // cancelada por el propio cliente antes de la aprobación
+  FAILED           // la transferencia on-chain falló; se libera la reserva
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
 model Tenant {
   id        String   @id @db.Uuid
   slug      String   @unique
   name      String
   createdAt DateTime @default(now())
 
-  users                 User[]
-  refreshTokens         RefreshToken[]
-  totpSecrets           TotpSecret[]
-  passwordResetTokens   PasswordResetToken[]
+  users                   User[]
+  refreshTokens           RefreshToken[]
+  totpSecrets             TotpSecret[]
+  passwordResetTokens     PasswordResetToken[]
   discretionaryAgreements DiscretionaryAgreement[]
-  agreementAcceptances  AgreementAcceptance[]
-  auditLogs             AuditLog[]
+  agreementAcceptances    AgreementAcceptance[]
+  auditLogs               AuditLog[]
+  tenantInstruments       TenantInstrument[]
+  holdings                Holding[]
+  orders                  Order[]
+  deposits                Deposit[]
+  withdrawals             Withdrawal[]
+  ledgerEntries           LedgerEntry[]
+  managementAgreements    ManagementAgreement[]
 }
 
 model User {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  email     String
+  id           String @id @db.Uuid
+  tenantId     String @db.Uuid
+  email        String
   passwordHash String
-  fullName  String
-  role      Role     @default(CLIENT)
+  fullName     String
+  role         Role   @default(CLIENT)
 
   totpEnabled Boolean @default(false)
 
@@ -70,6 +156,32 @@ model User {
   advisorId     String?       @db.Uuid
   accountStatus AccountStatus @default(ACTIVE)
 
+  // ---- Perfil ampliado (Fase 3 — §2.1) ----
+  // País de residencia y teléfono (E.164) — relevantes para ADVISOR y CLIENT.
+  country     String?
+  phoneNumber String?
+  // Wallet de RETIRO del cliente (destino de los fondos al retirar). No confundir
+  // con la wallet de depósito de la plataforma (origen desconocido, destino fijo
+  // por red, configurada por env var DEPOSIT_WALLET_*). Solo tiene sentido para
+  // CLIENT — se valida en la capa de servicio, no en el schema. Cambiarla resetea
+  // withdrawalWalletUpdatedAt, que alimenta el bloqueo antifraude de 48h (§2.2, §7.5).
+  withdrawalWalletAddress   String?
+  withdrawalWalletNetwork   ChainNetwork?
+  withdrawalWalletUpdatedAt DateTime?
+  // Qué opera: acciones, divisas o ambos. Tiene sentido para ADVISOR (qué gestiona)
+  // y CLIENT (qué contrató). Admin-only en escritura (§2.2).
+  contractType ContractType?
+  // Paquete/plan comercial — solo aplica a CLIENT. Admin-only en escritura (§2.2).
+  clientPackage ClientPackage?
+  // Foto de perfil — thumbnail chico (data URI, máx. ~50KB validado en el service).
+  // Sin bucket de object storage todavía (ver infra Fase 3 §12); migrar a R2 es
+  // directo el día que haga falta (columna sigue siendo una URL, solo cambia qué
+  // contiene).
+  avatarUrl String? @db.Text
+  // Caché denormalizada del saldo — la fuente de verdad es LedgerEntry (§5.1).
+  // Nunca se escribe directo fuera de LedgerRepository.appendEntry.
+  cashBalanceUsd Decimal @default(0) @db.Decimal(18, 8)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -78,11 +190,19 @@ model User {
   advisor User?  @relation("AdvisorClients", fields: [advisorId], references: [id])
   clients User[] @relation("AdvisorClients")
 
-  refreshTokens       RefreshToken[]
-  totpSecret          TotpSecret?
-  passwordResetTokens PasswordResetToken[]
+  refreshTokens        RefreshToken[]
+  totpSecret           TotpSecret?
+  passwordResetTokens  PasswordResetToken[]
   agreementAcceptances AgreementAcceptance[]
-  auditLogs           AuditLog[]
+  auditLogs            AuditLog[]
+  holdings             Holding[]
+  orders               Order[]
+  deposits             Deposit[]             @relation("ClientDeposits")
+  verifiedDeposits     Deposit[]             @relation("VerifierDeposits")
+  withdrawals          Withdrawal[]          @relation("ClientWithdrawals")
+  reviewedWithdrawals  Withdrawal[]          @relation("ReviewerWithdrawals")
+  ledgerEntries        LedgerEntry[]
+  managementAgreements ManagementAgreement[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -199,4 +319,256 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([tenantId, action])
+}
+
+// ---------------------------------------------------------------------------
+// Fase 3 — Modelo de dinero (§5), acuerdo de gestión (§3), depósitos (§6),
+// retiros (§7), órdenes (§8) y catálogo de instrumentos (§9).
+// ---------------------------------------------------------------------------
+
+// Ledger append-only: única fuente de verdad del saldo (§5.1). User.cashBalanceUsd
+// es una caché denormalizada, actualizada en la misma transacción que el asiento
+// (ver LedgerRepository.appendEntry). Los asientos no se editan ni se borran —
+// además de la disciplina de código, hay un trigger de Postgres que lo garantiza
+// (prevent_ledger_entry_mutation, prisma/manual-sql/001-rls-and-triggers.sql).
+// Una corrección se hace con un asiento ADJUSTMENT de signo contrario.
+model LedgerEntry {
+  id           String          @id @db.Uuid
+  tenantId     String          @db.Uuid
+  userId       String          @db.Uuid
+  type         LedgerEntryType
+  // Con signo: positivo acredita, negativo debita.
+  amount       Decimal         @db.Decimal(18, 8)
+  // Referencia al Deposit/Order/Withdrawal que originó el asiento.
+  refType      String?
+  refId        String?         @db.Uuid
+  // Saldo resultante tras aplicar este asiento — permite reconciliar sin recalcular
+  // toda la serie (ver prisma/reconcile-ledger.ts).
+  balanceAfter Decimal         @db.Decimal(18, 8)
+  createdAt    DateTime        @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, userId, createdAt])
+}
+
+// Acuerdo de Gestión Discrecional (§3). termMonths/earlyWithdrawalMaxPct/
+// earlyExitPenaltyPct se derivan del paquete comercial al momento de la firma
+// (ver PACKAGE_TERMS en agreements/agreement.constants.ts) y quedan congelados:
+// cambios posteriores en las condiciones del paquete no afectan retroactivamente
+// a acuerdos ya vigentes.
+model ManagementAgreement {
+  id       String        @id @db.Uuid
+  tenantId String        @db.Uuid
+  clientId String        @db.Uuid
+
+  packageType           ClientPackage
+  startDate             DateTime
+  termMonths            Int
+  endDate               DateTime
+  earlyWithdrawalMaxPct Decimal         @db.Decimal(5, 2)
+  earlyExitPenaltyPct   Decimal         @db.Decimal(5, 2)
+  status                AgreementStatus @default(ACTIVE)
+
+  // Referencia al acuerdo anterior si este es producto de una renovación (§3.1, §7.2 Escenario C).
+  // Único: un acuerdo solo puede ser el origen de una única renovación.
+  renewedFromId String?               @unique @db.Uuid
+  renewedFrom   ManagementAgreement?  @relation("AgreementRenewal", fields: [renewedFromId], references: [id])
+  renewedInto   ManagementAgreement?  @relation("AgreementRenewal")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  client User   @relation(fields: [clientId], references: [id])
+
+  withdrawals Withdrawal[]
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([tenantId, status])
+}
+
+// Catálogo maestro de instrumentos operables (acciones/divisas) — GLOBAL, sin
+// tenantId (§9.1): evita duplicar registros y multiplicar llamadas al proveedor
+// de cotizaciones. Qué instrumentos están habilitados por tenant vive en
+// TenantInstrument. El precio en vivo NO se guarda acá — se pide al proveedor de
+// datos de mercado al vuelo (con caché en Redis, ver §12), no se reconcilia un
+// precio persistido desactualizado.
+model Instrument {
+  id         String       @id @db.Uuid
+  symbol     String       @unique // ticker del proveedor, ej. "AAPL", "EURUSD"
+  name       String
+  assetClass ContractType
+  exchange   String?
+  createdAt  DateTime     @default(now())
+
+  tenantInstruments TenantInstrument[]
+  holdings          Holding[]
+  orders            Order[]
+}
+
+// Qué instrumentos del catálogo global están habilitados para cada tenant (§9.2).
+// El admin opera sobre esta tabla, nunca sobre Instrument directamente. La baja
+// es lógica (isActive = false): un instrumento deshabilitado no se puede comprar,
+// pero sigue apareciendo en carteras con posición abierta y sigue cotizando
+// mientras existan holdings abiertos.
+model TenantInstrument {
+  id           String   @id @db.Uuid
+  tenantId     String   @db.Uuid
+  instrumentId String   @db.Uuid
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+  @@unique([tenantId, instrumentId])
+  @@index([tenantId])
+}
+
+// Posición de un cliente en un instrumento. quantity/avgCostUsd se actualizan al
+// ejecutar un Order de compra (promedio ponderado, §8). El % de rendimiento a la
+// fecha se calcula en runtime (precio actual del proveedor vs avgCostUsd), no se
+// persiste.
+model Holding {
+  id           String   @id @db.Uuid
+  tenantId     String   @db.Uuid
+  userId       String   @db.Uuid
+  instrumentId String   @db.Uuid
+  quantity     Decimal  @db.Decimal(24, 8)
+  avgCostUsd   Decimal  @db.Decimal(18, 8)
+  updatedAt    DateTime @default(now()) @updatedAt
+  createdAt    DateTime @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+  @@unique([tenantId, userId, instrumentId])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// Orden de mercado ejecutada contra el saldo disponible del cliente (§8). No
+// requiere aprobación de asesor (a diferencia de Deposit/Withdrawal). La orden,
+// el asiento de ledger (BUY/SELL) y la actualización del Holding ocurren en una
+// única transacción de base (§5.3, §8 "Atomicidad").
+model Order {
+  id             String    @id @db.Uuid
+  tenantId       String    @db.Uuid
+  userId         String    @db.Uuid
+  instrumentId   String    @db.Uuid
+  side           OrderSide @default(BUY)
+  quantity       Decimal   @db.Decimal(24, 8)
+  // Precio de referencia al momento de ejecutar (refetch obligatorio, tolerancia
+  // 0.5% respecto al precio mostrado — §8 "Antigüedad máxima del precio").
+  executionPrice Decimal   @db.Decimal(18, 8)
+  totalUsd       Decimal   @db.Decimal(18, 8)
+  // Comisión/spread — pendiente de confirmación comercial (§15); el campo existe
+  // desde ahora con valor 0 para no requerir otra migración cuando se defina.
+  feeAmount      Decimal   @default(0) @db.Decimal(18, 8)
+  createdAt      DateTime  @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// Solicitud de fondeo cripto on-chain (§6). Máquina de estados del §6.2:
+// PENDING_TX -> PENDING_CONFIRMATIONS -> PENDING_REVIEW -> APPROVED/REJECTED,
+// con salidas a FAILED (verificación automática no pasa) y EXPIRED (TTL de 24h
+// en PENDING_TX sin recibir hash). La verificación automática es precondición de
+// la revisión humana del asesor/admin, no reemplazo (§6.1).
+model Deposit {
+  id       String       @id @db.Uuid
+  tenantId String       @db.Uuid
+  userId   String       @db.Uuid
+  chain    ChainNetwork
+  toAddress String      // wallet de la plataforma para esa red (config)
+
+  // Monto declarado por el cliente — solo referencia de UX; el que se acredita
+  // siempre es verifiedAmountUsd (§6.3 #9).
+  declaredAmountToken Decimal       @db.Decimal(24, 8)
+  txHash              String?
+  status              DepositStatus @default(PENDING_TX)
+
+  verifiedAmountUsd   Decimal? @db.Decimal(18, 8)
+  // Dirección de origen de la transacción — se registra en el primer depósito
+  // aprobado; un depósito posterior desde otra dirección se alerta (§6.3 #8).
+  sourceWalletAddress String?
+  // Snapshot de la respuesta cruda de ambas fuentes de verificación (§6.3 #6,
+  // §11.3) — auditoría forense de qué respondió cada API en su momento.
+  verifierSnapshot    Json?
+  confirmations       Int?
+
+  // TTL de 24h desde la creación mientras status = PENDING_TX (§6.4).
+  expiresAt DateTime
+
+  reviewedByUserId String?   @db.Uuid
+  reviewedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt DateTime @default(now())
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  user     User   @relation("ClientDeposits", fields: [userId], references: [id])
+  verifier User?  @relation("VerifierDeposits", fields: [reviewedByUserId], references: [id])
+
+  // Un hash solo puede reclamarse una vez en toda la plataforma, por cualquier
+  // cliente — defensa principal contra replay (§6.3 #1). Postgres permite
+  // múltiples NULL, así que no colisiona entre filas todavía en PENDING_TX.
+  @@unique([chain, txHash])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, status])
+}
+
+// Solicitud de retiro (§7). El monto solicitado se reserva al crear la solicitud
+// (§5.3, §7.3): se resta del saldo disponible vía un asiento WITHDRAWAL negativo
+// en el ledger, y se libera (asiento de signo contrario) si se rechaza/cancela/
+// falla. La transferencia on-chain de salida la firma manualmente el operador
+// fuera del sistema — nunca hay claves privadas en el backend (§7.4, §13.3).
+model Withdrawal {
+  id       String           @id @db.Uuid
+  tenantId String           @db.Uuid
+  userId   String           @db.Uuid
+  type     WithdrawalType
+  status   WithdrawalStatus @default(PENDING_REVIEW)
+
+  requestedAmountUsd Decimal @db.Decimal(18, 8)
+
+  // Snapshot del acuerdo al momento de la solicitud — el desglose del cálculo
+  // queda congelado para auditoría aunque el acuerdo siga cambiando después (§11.3).
+  agreementId              String?          @db.Uuid
+  agreementStatusAtRequest AgreementStatus?
+  capitalUsd               Decimal?         @db.Decimal(18, 8)
+  gainsUsd                 Decimal?         @db.Decimal(18, 8)
+  penaltyUsd               Decimal?         @db.Decimal(18, 8)
+  finalAmountUsd           Decimal?         @db.Decimal(18, 8)
+
+  destinationWalletAddress String
+  destinationWalletNetwork ChainNetwork
+  outboundTxHash           String?
+
+  reviewedByUserId String?   @db.Uuid
+  reviewedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt DateTime @default(now())
+
+  tenant    Tenant                @relation(fields: [tenantId], references: [id])
+  user      User                  @relation("ClientWithdrawals", fields: [userId], references: [id])
+  reviewer  User?                 @relation("ReviewerWithdrawals", fields: [reviewedByUserId], references: [id])
+  agreement ManagementAgreement?  @relation(fields: [agreementId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, status])
 }

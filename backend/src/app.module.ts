@@ -10,6 +10,14 @@ import { AuditModule } from './audit/audit.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { UsersModule } from './users/users.module';
 import { TenantContextInterceptorModule } from './common/interceptors/tenant-context.module';
+import { LedgerModule } from './ledger/ledger.module';
+import { ProfileModule } from './profile/profile.module';
+import { AgreementsModule } from './agreements/agreements.module';
+import { DepositsModule } from './deposits/deposits.module';
+import { WithdrawalsModule } from './withdrawals/withdrawals.module';
+import { MarketModule } from './market/market.module';
+import { OrdersModule } from './orders/orders.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -31,6 +39,14 @@ import { TenantContextInterceptorModule } from './common/interceptors/tenant-con
     AuthModule,
     OnboardingModule,
     UsersModule,
+    LedgerModule,
+    ProfileModule,
+    AgreementsModule,
+    DepositsModule,
+    WithdrawalsModule,
+    MarketModule,
+    OrdersModule,
+    MetricsModule,
   ],
   controllers: [HealthController],
 })
