@@ -14,10 +14,24 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   ADMIN: [
     { to: '/admin/users', label: 'Usuarios' },
     { to: '/admin/clients', label: 'Clientes' },
+    { to: '/admin/deposits', label: 'Depósitos' },
+    { to: '/admin/withdrawals', label: 'Retiros' },
+    { to: '/admin/instruments', label: 'Instrumentos' },
+    { to: '/admin/metrics', label: 'Métricas' },
     { to: '/admin/audit', label: 'Auditoría' },
   ],
-  ADVISOR: [{ to: '/advisor/clients', label: 'Mi cartera' }],
-  CLIENT: [],
+  ADVISOR: [
+    { to: '/advisor/clients', label: 'Mi cartera' },
+    { to: '/advisor/deposits', label: 'Depósitos' },
+    { to: '/advisor/withdrawals', label: 'Retiros' },
+  ],
+  CLIENT: [
+    { to: '/client/portfolio', label: 'Portfolio' },
+    { to: '/client/deposits', label: 'Depósitos' },
+    { to: '/client/withdrawals', label: 'Retiros' },
+    { to: '/client/market', label: 'Mercado' },
+    { to: '/client/profile', label: 'Perfil' },
+  ],
 };
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
