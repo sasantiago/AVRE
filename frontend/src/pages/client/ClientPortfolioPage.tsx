@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { GeometricOrb } from '@/components/three/GeometricOrb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow } from '@/components/ui/table';
 import { apiFetch, ApiError } from '@/lib/api-client';
 import { Portfolio } from '@/lib/types';
+
+// three.js pesa ~600KB — carga diferida para no inflar el chunk principal de
+// rutas que nunca lo usan (login, depósitos, retiros, etc.).
+const GeometricOrb = lazy(() =>
+  import('@/components/three/GeometricOrb').then((m) => ({ default: m.GeometricOrb })),
+);
 
 function fmtUsd(value: string | null) {
   if (value === null) return '—';
@@ -66,7 +71,9 @@ export default function ClientPortfolioPage() {
                     </div>
                   </div>
                 </div>
-                <GeometricOrb size={180} tone={tone} />
+                <Suspense fallback={<div style={{ width: 180, height: 180 }} />}>
+                  <GeometricOrb size={180} tone={tone} />
+                </Suspense>
               </CardContent>
             </Card>
 

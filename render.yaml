@@ -7,6 +7,28 @@ databases:
     postgresMajorVersion: "16"
 
 services:
+  - name: avre-frontend
+    type: web
+    runtime: static
+    rootDir: ./frontend
+    region: oregon
+    # cd .. porque el monorepo usa npm workspaces — el lockfile y los node_modules
+    # compartidos viven en la raíz del repo, no dentro de frontend/.
+    buildCommand: cd .. && npm ci && npm run build --workspace=frontend
+    staticPublishPath: ./dist
+    buildFilter:
+      paths:
+        - frontend/**
+    routes:
+      # SPA con React Router — cualquier ruta que no matchee un archivo estático
+      # sirve index.html y el router del lado del cliente toma el control.
+      - path: /*
+        destination: /index.html
+        type: rewrite
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://api.avrecapital.com
+
   - name: avre-redis
     type: keyvalue
     plan: starter
