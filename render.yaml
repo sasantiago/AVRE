@@ -11,7 +11,6 @@ services:
     type: web
     runtime: static
     rootDir: ./frontend
-    region: oregon
     # cd .. porque el monorepo usa npm workspaces — el lockfile y los node_modules
     # compartidos viven en la raíz del repo, no dentro de frontend/.
     buildCommand: cd .. && npm ci && npm run build --workspace=frontend
