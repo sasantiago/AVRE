@@ -19,8 +19,15 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
 
+  // FRONTEND_ORIGIN admite una lista separada por comas (ej. dominio raíz +
+  // www) — un solo origen sigue funcionando igual que antes, sin coma.
+  const allowedOrigins = (config.get<string>('FRONTEND_ORIGIN') ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: config.get<string>('FRONTEND_ORIGIN'),
+    origin: allowedOrigins,
     credentials: true,
   });
 
