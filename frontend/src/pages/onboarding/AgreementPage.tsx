@@ -63,10 +63,7 @@ export default function AgreementPage() {
       </div>
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <span className="mb-2 inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-medium text-amber-300">
-            Contenido pendiente de revisión legal — versión de desarrollo
-          </span>
-          <CardTitle>Acuerdo de Gestión Discrecional{agreement ? ` — ${agreement.version}` : ''}</CardTitle>
+          <CardTitle>Acuerdo de Gestión Discrecional</CardTitle>
           <CardDescription>
             Tenés que leer y aceptar este acuerdo antes de poder direccionar aportes de capital.
           </CardDescription>

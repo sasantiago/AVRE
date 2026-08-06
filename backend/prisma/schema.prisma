@@ -500,6 +500,11 @@ model Deposit {
   status              DepositStatus @default(PENDING_TX)
 
   verifiedAmountUsd   Decimal? @db.Decimal(18, 8)
+  // Captura del comprobante de transferencia — respaldo visual opcional para
+  // quien revisa, NUNCA reemplaza la verificación automática on-chain del
+  // txHash (§6.3). Mismo criterio de tamaño que User.avatarUrl (data URI,
+  // ~50KB, validado en el service).
+  receiptImageUrl String? @db.Text
   // Dirección de origen de la transacción — se registra en el primer depósito
   // aprobado; un depósito posterior desde otra dirección se alerta (§6.3 #8).
   sourceWalletAddress String?

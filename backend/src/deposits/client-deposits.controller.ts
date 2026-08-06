@@ -52,6 +52,6 @@ export class ClientDepositsController {
     @Param('id') id: string,
     @Body() dto: SubmitTxHashDto,
   ) {
-    return this.depositService.submitTxHash(actor, id, dto.txHash);
+    return this.depositService.submitTxHash(actor, id, dto.txHash, dto.receiptImageUrl);
   }
 }

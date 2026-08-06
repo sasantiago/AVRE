@@ -72,10 +72,14 @@ export class DepositService {
   // Sin cron (§13.2): el hash local se valida antes de tocar ninguna API externa
   // (§6.4), y la verificación se dispara una vez acá y se reintenta en cada
   // lectura posterior mientras siga PENDING_CONFIRMATIONS (getOwn/listOwn).
+  //
+  // receiptImageUrl es enteramente opcional y solo un respaldo visual para
+  // quien revisa — la verificación real sigue siendo 100% el txHash on-chain.
   async submitTxHash(
     actor: AuthenticatedUser,
     depositId: string,
     txHash: string,
+    receiptImageUrl?: string,
   ): Promise<Deposit> {
     const deposit = await this.getOwnedByClient(actor.userId, depositId);
     if (deposit.status !== DepositStatus.PENDING_TX) {
@@ -95,7 +99,11 @@ export class DepositService {
       throw new ConflictException('Ese hash ya fue reclamado en otro depósito');
     }
 
-    const updated = await this.depositRepo.applyTxHashSubmission(depositId, txHash);
+    const updated = await this.depositRepo.applyTxHashSubmission(
+      depositId,
+      txHash,
+      receiptImageUrl,
+    );
     return this.runVerification(updated);
   }
 

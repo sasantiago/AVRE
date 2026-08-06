@@ -150,7 +150,11 @@ describe('DepositService', () => {
 
       await service.submitTxHash(client as any, depositId, 'a'.repeat(64));
 
-      expect(depositRepo.applyTxHashSubmission).toHaveBeenCalledWith(depositId, 'a'.repeat(64));
+      expect(depositRepo.applyTxHashSubmission).toHaveBeenCalledWith(
+        depositId,
+        'a'.repeat(64),
+        undefined,
+      );
       expect(verifier.verify).toHaveBeenCalled();
     });
   });

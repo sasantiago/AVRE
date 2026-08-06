@@ -88,10 +88,14 @@ export class DepositRepository {
     });
   }
 
-  async applyTxHashSubmission(id: string, txHash: string): Promise<Deposit> {
+  async applyTxHashSubmission(
+    id: string,
+    txHash: string,
+    receiptImageUrl?: string,
+  ): Promise<Deposit> {
     return this.tenantContext.getTx().deposit.update({
       where: { id },
-      data: { txHash, status: DepositStatus.PENDING_CONFIRMATIONS },
+      data: { txHash, receiptImageUrl, status: DepositStatus.PENDING_CONFIRMATIONS },
     });
   }
 

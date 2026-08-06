@@ -1,0 +1,620 @@
+<title>Manual de usuario — AVRE Capital Group</title>
+<style>
+  :root {
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-2: #EEF1F8;
+    --ink: #0F172A;
+    --ink-muted: #64748B;
+    --accent: #6366F1;
+    --accent-strong: #4F46E5;
+    --accent-ink: #FFFFFF;
+    --border: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(15, 23, 42, 0.16);
+    --good: #059669;
+    --good-bg: rgba(5, 150, 105, 0.10);
+    --warn: #B45309;
+    --warn-bg: rgba(180, 83, 9, 0.10);
+    --bad: #BE123C;
+    --bad-bg: rgba(190, 18, 60, 0.10);
+    --code-bg: rgba(15, 23, 42, 0.06);
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "URW Palladio L", serif;
+    --font-body: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F172A;
+      --surface: #1B2740;
+      --surface-2: #16213A;
+      --ink: #F1F5F9;
+      --ink-muted: #94A3B8;
+      --accent: #818CF8;
+      --accent-strong: #A5B4FC;
+      --accent-ink: #0F172A;
+      --border: rgba(248, 250, 252, 0.10);
+      --border-strong: rgba(248, 250, 252, 0.18);
+      --good: #34D399;
+      --good-bg: rgba(52, 211, 153, 0.12);
+      --warn: #FBBF24;
+      --warn-bg: rgba(251, 191, 36, 0.12);
+      --bad: #FB7185;
+      --bad-bg: rgba(251, 113, 133, 0.12);
+      --code-bg: rgba(248, 250, 252, 0.08);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F172A;
+    --surface: #1B2740;
+    --surface-2: #16213A;
+    --ink: #F1F5F9;
+    --ink-muted: #94A3B8;
+    --accent: #818CF8;
+    --accent-strong: #A5B4FC;
+    --accent-ink: #0F172A;
+    --border: rgba(248, 250, 252, 0.10);
+    --border-strong: rgba(248, 250, 252, 0.18);
+    --good: #34D399;
+    --good-bg: rgba(52, 211, 153, 0.12);
+    --warn: #FBBF24;
+    --warn-bg: rgba(251, 191, 36, 0.12);
+    --bad: #FB7185;
+    --bad-bg: rgba(251, 113, 133, 0.12);
+    --code-bg: rgba(248, 250, 252, 0.08);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+  :root[data-theme="light"] {
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-2: #EEF1F8;
+    --ink: #0F172A;
+    --ink-muted: #64748B;
+    --accent: #6366F1;
+    --accent-strong: #4F46E5;
+    --accent-ink: #FFFFFF;
+    --border: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(15, 23, 42, 0.16);
+    --good: #059669;
+    --good-bg: rgba(5, 150, 105, 0.10);
+    --warn: #B45309;
+    --warn-bg: rgba(180, 83, 9, 0.10);
+    --bad: #BE123C;
+    --bad-bg: rgba(190, 18, 60, 0.10);
+    --code-bg: rgba(15, 23, 42, 0.06);
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15.5px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; }
+  a { color: var(--accent-strong); }
+  code, .mono { font-family: var(--font-mono); }
+
+  /* ---------- Header ---------- */
+  .masthead {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .masthead-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 18px 24px 0;
+  }
+  .brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .brand-mark {
+    width: 34px; height: 34px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-mark svg { width: 100%; height: 100%; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-text strong { font-family: var(--font-display); font-size: 17px; letter-spacing: 0.01em; }
+  .brand-text span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+
+  .tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+  .tab-btn {
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-muted);
+    padding: 10px 16px; border-radius: 10px 10px 0 0; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .tab-btn:hover { color: var(--ink); background: var(--surface-2); }
+  .tab-btn.active { color: var(--accent-strong); border-bottom-color: var(--accent); background: var(--surface-2); }
+  .tab-btn:focus-visible, .navlink:focus-visible, a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* ---------- Layout ---------- */
+  .page { max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
+  .role-panel { display: none; }
+  .role-panel.active { display: block; }
+
+  .intro {
+    padding: 28px 0 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent-strong); margin: 0 0 8px;
+  }
+  .intro h1 { font-size: clamp(24px, 3vw, 32px); margin: 0 0 8px; }
+  .intro p.lede { max-width: 62ch; color: var(--ink-muted); margin: 0; font-size: 15.5px; }
+
+  .layout-grid { display: grid; grid-template-columns: 210px 1fr; gap: 40px; align-items: start; }
+  @media (max-width: 820px) { .layout-grid { grid-template-columns: 1fr; } }
+
+  .side-nav {
+    position: sticky; top: 118px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  @media (max-width: 820px) {
+    .side-nav {
+      position: static; flex-direction: row; overflow-x: auto; gap: 6px;
+      margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+  }
+  .side-nav a {
+    text-decoration: none; color: var(--ink-muted); font-size: 13.5px; font-weight: 600;
+    padding: 7px 10px; border-radius: 8px; white-space: nowrap;
+    border-left: 2px solid transparent;
+  }
+  @media (max-width: 820px) { .side-nav a { border-left: none; border-bottom: 2px solid transparent; } }
+  .side-nav a:hover { color: var(--ink); background: var(--surface-2); }
+  .side-nav a.current { color: var(--accent-strong); border-left-color: var(--accent); background: var(--surface-2); }
+
+  .content { display: flex; flex-direction: column; gap: 44px; min-width: 0; }
+
+  section.feature { scroll-margin-top: 112px; }
+  .feature-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .feature-head h2 { font-size: 21px; margin: 0; }
+  .route-chip {
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-muted);
+    background: var(--code-bg); border-radius: 6px; padding: 2px 8px;
+  }
+  .feature-dek { color: var(--ink-muted); margin: 0 0 18px; max-width: 68ch; font-size: 14.5px; }
+
+  /* ---------- Steps ---------- */
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .steps li {
+    display: grid; grid-template-columns: 28px 1fr; gap: 14px;
+    padding: 0 0 20px; position: relative;
+  }
+  .steps li::before {
+    content: ""; position: absolute; left: 13px; top: 26px; bottom: 0;
+    width: 1px; background: var(--border-strong);
+  }
+  .steps li:last-child::before { display: none; }
+  .steps li:last-child { padding-bottom: 0; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--surface);
+    border: 1px solid var(--border-strong); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 700; font-family: var(--font-mono);
+    z-index: 1;
+  }
+  .step-body p { margin: 0 0 4px; }
+  .step-body strong.ui { font-weight: 700; }
+
+  kbd.ui-label {
+    font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+    background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 1px 7px; color: var(--ink);
+  }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    border-radius: 12px; padding: 14px 16px; font-size: 14px; margin: 16px 0 0;
+    border: 1px solid; display: flex; gap: 10px;
+  }
+  .callout .label { font-weight: 700; flex: none; }
+  .callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 35%, transparent); color: var(--ink); }
+  .callout.warn .label { color: var(--warn); }
+  .callout.bad { background: var(--bad-bg); border-color: color-mix(in srgb, var(--bad) 35%, transparent); color: var(--ink); }
+  .callout.bad .label { color: var(--bad); }
+  .callout.good { background: var(--good-bg); border-color: color-mix(in srgb, var(--good) 35%, transparent); color: var(--ink); }
+  .callout.good .label { color: var(--good); }
+
+  /* ---------- Reference table ---------- */
+  .ref-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 10px; }
+  table.ref { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.ref th, table.ref td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.ref th { background: var(--surface-2); color: var(--ink-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.ref tr:last-child td { border-bottom: none; }
+  table.ref td.desc { white-space: normal; color: var(--ink-muted); }
+
+  .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .pill.good { background: var(--good-bg); color: var(--good); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .pill.muted { background: var(--code-bg); color: var(--ink-muted); }
+
+  .status-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
+  .status-flow .arrow { color: var(--ink-muted); }
+
+  footer.manual-footer {
+    max-width: 1180px; margin: 40px auto 0; padding: 20px 24px 0; border-top: 1px solid var(--border);
+    color: var(--ink-muted); font-size: 12.5px;
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand-row">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 8 L74 62 L58 62 L50 40 L42 62 L26 62 Z" fill="var(--accent)"/>
+          <path d="M30 92 L46 55 L60 55 L44 92 Z" fill="var(--accent-strong)"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <strong>AVRE Capital Group</strong>
+        <span>Manual de usuario</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Rol">
+      <button class="tab-btn active" data-tab="inicio" role="tab" aria-selected="true">Primeros pasos</button>
+      <button class="tab-btn" data-tab="cliente" role="tab" aria-selected="false">Cliente</button>
+      <button class="tab-btn" data-tab="asesor" role="tab" aria-selected="false">Asesor</button>
+      <button class="tab-btn" data-tab="admin" role="tab" aria-selected="false">Administrador</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- ============================= PRIMEROS PASOS ============================= -->
+  <section class="role-panel active" data-panel="inicio">
+    <div class="intro">
+      <p class="eyebrow">Para todos los roles</p>
+      <h1>Acceso a la plataforma</h1>
+      <p class="lede">Estos pasos son iguales para Cliente, Asesor y Administrador. Una vez adentro, cada rol ve su propio panel — elegí tu pestaña arriba.</p>
+    </div>
+
+    <div class="layout-grid">
+      <nav class="side-nav" data-nav-for="inicio">
+        <a href="#i-acceder" class="current">1. Acceder</a>
+        <a href="#i-registro">2. Crear cuenta</a>
+        <a href="#i-login">3. Iniciar sesión</a>
+        <a href="#i-acuerdo">4. Acuerdo (clientes)</a>
+      </nav>
+
+      <div class="content">
+        <section class="feature" id="i-acceder">
+          <div class="feature-head"><h2>1. Entrar al sitio</h2></div>
+          <p class="feature-dek">Toda la plataforma vive en un solo dominio.</p>
+          <ul class="steps">
+            <li><span class="step-num">→</span><div class="step-body"><p>Abrí <strong class="mono">avrecapital.com</strong> en el navegador. Ahí está la landing pública; el login y los paneles cuelgan de la misma dirección.</p></div></li>
+          </ul>
+        </section>
+
+        <section class="feature" id="i-registro">
+          <div class="feature-head"><h2>2. Crear una cuenta</h2><span class="route-chip">/register</span></div>
+          <p class="feature-dek">El registro público solo crea cuentas de <strong>Cliente</strong>. Las cuentas de Asesor y Administrador las crea un Administrador desde <kbd class="ui-label">Usuarios</kbd> — ver la pestaña Administrador.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Desde la landing, tocá <strong class="ui">Quiero ser AVREan</strong> o andá directo a <kbd class="ui-label">Crear cuenta</kbd> en la pantalla de login.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Completá nombre completo, email y una contraseña de al menos 10 caracteres.</p></div></li>
+            <li><span class="step-num">3</span><div class="step-body"><p>Con la cuenta creada, iniciá sesión — ver el paso siguiente.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="feature" id="i-login">
+          <div class="feature-head"><h2>3. Iniciar sesión</h2><span class="route-chip">/login</span></div>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Ingresá tu email y contraseña en <kbd class="ui-label">Ingresar</kbd>.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>La sesión te lleva directo a tu panel: Cliente entra por Portfolio, Asesor por Mi cartera, Administrador por Usuarios.</p></div></li>
+            <li><span class="step-num">3</span><div class="step-body"><p>Para salir, usá <kbd class="ui-label">Cerrar sesión</kbd> arriba a la derecha, en cualquier pantalla del panel.</p></div></li>
+          </ol>
+          <div class="callout warn">
+            <span class="label">Si olvidaste tu contraseña —</span>
+            <span>el link <kbd class="ui-label">Olvidé mi contraseña</kbd> existe en la pantalla de login, pero el envío de emails todavía no está activado en esta plataforma. Si te pasa, avisale a un Administrador para que te la restablezca manualmente.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="i-acuerdo">
+          <div class="feature-head"><h2>4. Aceptar el Acuerdo de Gestión Discrecional</h2><span class="route-chip">/onboarding/agreement</span></div>
+          <p class="feature-dek">Solo aplica a cuentas Cliente. Es un paso obligatorio antes de ver el Portfolio — ni Asesor ni Administrador lo ven.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>La primera vez que un Cliente inicia sesión, la plataforma lo lleva directo a leer el acuerdo vigente.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Tildá la casilla de conformidad y tocá <strong class="ui">Aceptar y continuar</strong>.</p></div></li>
+            <li><span class="step-num">3</span><div class="step-body"><p>Recién ahí se habilita el resto del panel — Depósitos, Retiros, Mercado, Perfil.</p></div></li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= CLIENTE ============================= -->
+  <section class="role-panel" data-panel="cliente">
+    <div class="intro">
+      <p class="eyebrow">Rol Cliente</p>
+      <h1>Gestioná tu capital</h1>
+      <p class="lede">Portfolio, depósitos, retiros, mercado y tus datos de contacto — todo desde el mismo panel, en la barra de arriba.</p>
+    </div>
+
+    <div class="layout-grid">
+      <nav class="side-nav" data-nav-for="cliente">
+        <a href="#c-portfolio" class="current">Portfolio</a>
+        <a href="#c-depositos">Depósitos</a>
+        <a href="#c-retiros">Retiros</a>
+        <a href="#c-mercado">Mercado</a>
+        <a href="#c-perfil">Perfil</a>
+      </nav>
+
+      <div class="content">
+        <section class="feature" id="c-portfolio">
+          <div class="feature-head"><h2>Portfolio</h2><span class="route-chip">/client/portfolio</span></div>
+          <p class="feature-dek">Tu pantalla de entrada. Muestra tres números y el detalle de lo que tenés invertido.</p>
+          <div class="ref-table-wrap">
+            <table class="ref">
+              <tr><th>Dato</th><th class="desc">Qué significa</th></tr>
+              <tr><td>Valor total</td><td class="desc">Saldo disponible + valor de mercado de tus posiciones abiertas.</td></tr>
+              <tr><td>Saldo disponible</td><td class="desc">Lo que tenés sin invertir — con esto se pagan las compras y se calculan los retiros.</td></tr>
+              <tr><td>Posiciones</td><td class="desc">Instrumentos comprados, con cantidad, costo promedio, precio actual y rendimiento %.</td></tr>
+            </table>
+          </div>
+        </section>
+
+        <section class="feature" id="c-depositos">
+          <div class="feature-head"><h2>Depósitos</h2><span class="route-chip">/client/deposits</span></div>
+          <p class="feature-dek">Así fondeás tu cuenta: transferís cripto vos mismo y la plataforma verifica la transacción antes de acreditarla.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Tocá <strong class="ui">Nuevo depósito</strong>, elegí la red — <span class="mono">USDT · TRON (TRC20)</span> o <span class="mono">USDC · Polygon</span> — y un monto de referencia. Confirmá con <strong class="ui">Crear solicitud</strong>.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>La fila de tu solicitud muestra la wallet exacta de destino, en la columna <strong>Enviar a</strong>. Transferí desde tu billetera o exchange a <em>esa</em> dirección, en <em>esa</em> red — una red equivocada puede perder los fondos.</p></div></li>
+            <li><span class="step-num">3</span><div class="step-body"><p>Volvé a la fila, pegá el hash de tu transacción en el campo y tocá <strong class="ui">Enviar</strong>.</p></div></li>
+            <li><span class="step-num">4</span><div class="step-body"><p>La plataforma verifica el hash on-chain de forma automática y lo pasa a la cola de tu Asesor o Administrador para la aprobación final.</p></div></li>
+          </ol>
+          <p style="margin:18px 0 4px; font-weight:600; font-size:13.5px;">Estados que vas a ver</p>
+          <div class="status-flow">
+            <span class="pill muted">Esperando hash</span><span class="arrow">→</span>
+            <span class="pill warn">Confirmando en la red</span><span class="arrow">→</span>
+            <span class="pill warn">En revisión</span><span class="arrow">→</span>
+            <span class="pill good">Aprobado</span>
+          </div>
+          <div class="callout warn">
+            <span class="label">Importante —</span>
+            <span>el monto que se acredita es siempre el verificado on-chain, no el que declaraste al crear la solicitud. Si pasan 24hs sin cargar un hash, la solicitud vence.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="c-retiros">
+          <div class="feature-head"><h2>Retiros</h2><span class="route-chip">/client/withdrawals</span></div>
+          <p class="feature-dek">Necesitás tener cargada tu wallet de retiro en <strong>Perfil</strong> antes de poder pedir uno.</p>
+          <div class="ref-table-wrap">
+            <table class="ref">
+              <tr><th>Tipo</th><th class="desc">Qué implica</th></tr>
+              <tr><td>Parcial</td><td class="desc">Retirás un monto que vos elegís, dentro del máximo que permite tu acuerdo. El acuerdo sigue activo, sin penalidad.</td></tr>
+              <tr><td>Definitivo</td><td class="desc">Se liquidan todas tus posiciones y se retira el saldo completo. Cierra tu acuerdo de gestión.</td></tr>
+            </table>
+          </div>
+          <ol class="steps" style="list-style:none; margin-top:18px;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Tocá <strong class="ui">Solicitar retiro</strong>, elegí el tipo (y el monto, si es parcial), confirmá.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Tu Asesor o Administrador la revisa y aprueba. Podés cancelarla vos mismo mientras esté <span class="pill warn" style="vertical-align:middle;">En revisión</span>.</p></div></li>
+          </ol>
+          <div class="callout bad">
+            <span class="label">Retiro definitivo anticipado —</span>
+            <span>si tu acuerdo todavía está activo (no llegó a su plazo), un retiro definitivo tiene una penalidad que <strong>no se calcula sola</strong>: tu Asesor te va a contactar por WhatsApp para acordar el monto final antes de que se pueda aprobar.</span>
+          </div>
+          <div class="callout warn">
+            <span class="label">Bloqueo de 48 horas —</span>
+            <span>si cambiás tu wallet de retiro en Perfil, no vas a poder crear una solicitud nueva hasta que pasen 48hs. Es una protección contra fraude, no un error.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="c-mercado">
+          <div class="feature-head"><h2>Mercado</h2><span class="route-chip">/client/market</span></div>
+          <p class="feature-dek">El catálogo de instrumentos habilitado para tu cuenta, con cotización en vivo.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Tocá <strong class="ui">Comprar</strong> junto al instrumento que te interesa.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Indicá cuántos dólares querés invertir (no cantidad de unidades — la cantidad se calcula sola al precio de mercado) y confirmá.</p></div></li>
+          </ol>
+          <div class="callout warn">
+            <span class="label">El precio puede moverse —</span>
+            <span>si cotiza más de 0.5% distinto entre que abriste la pantalla y confirmaste, la plataforma te va a pedir que reintentes con el precio actualizado en vez de ejecutar a un precio viejo.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="c-perfil">
+          <div class="feature-head"><h2>Perfil</h2><span class="route-chip">/client/profile</span></div>
+          <p class="feature-dek">País, teléfono y tu wallet de retiro — la dirección donde recibís los fondos cuando pedís un retiro.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Completá los campos que quieras actualizar y tocá <strong class="ui">Guardar cambios</strong>.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>La wallet y su red viajan juntas: si cargás una dirección, elegí también su red correspondiente.</p></div></li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= ASESOR ============================= -->
+  <section class="role-panel" data-panel="asesor">
+    <div class="intro">
+      <p class="eyebrow">Rol Asesor</p>
+      <h1>Acompañá a tu cartera de clientes</h1>
+      <p class="lede">Ves solo a los clientes que un Administrador te asignó — nunca los de otro asesor.</p>
+    </div>
+
+    <div class="layout-grid">
+      <nav class="side-nav" data-nav-for="asesor">
+        <a href="#a-cartera" class="current">Mi cartera</a>
+        <a href="#a-depositos">Depósitos</a>
+        <a href="#a-retiros">Retiros</a>
+      </nav>
+
+      <div class="content">
+        <section class="feature" id="a-cartera">
+          <div class="feature-head"><h2>Mi cartera</h2><span class="route-chip">/advisor/clients</span></div>
+          <p class="feature-dek">Listado de tus clientes asignados, con estado de cuenta y si ya aceptaron el acuerdo. Tocá <strong class="ui">Ver ficha →</strong> para el detalle de uno en particular.</p>
+        </section>
+
+        <section class="feature" id="a-depositos">
+          <div class="feature-head"><h2>Depósitos por revisar</h2><span class="route-chip">/advisor/deposits</span></div>
+          <p class="feature-dek">Depósitos de tus clientes que ya pasaron la verificación automática on-chain y esperan tu aprobación final.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Revisá el monto verificado contra lo declarado, y cualquier alerta en la columna <strong>Alertas</strong>.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Tocá <strong class="ui">Aprobar</strong> para acreditarlo, o escribí un motivo y tocá <strong class="ui">Rechazar</strong>.</p></div></li>
+          </ol>
+          <div class="callout bad">
+            <span class="label">No ignores las alertas —</span>
+            <span><span class="pill warn" style="vertical-align:middle;">Wallet de origen cambió</span> avisa que este depósito llegó desde una dirección distinta a la habitual del cliente; <span class="pill bad" style="vertical-align:middle;">Monto no coincide</span> señala que lo verificado difiere de lo declarado por más de 1%. Revisalas antes de aprobar.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="a-retiros">
+          <div class="feature-head"><h2>Retiros por revisar</h2><span class="route-chip">/advisor/withdrawals</span></div>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Para un retiro común, tocá <strong class="ui">Aprobar</strong> o rechazalo con un motivo, igual que en depósitos.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Si es un <strong>retiro definitivo anticipado</strong> (columna Monto final en <span class="pill muted">A definir</span>), primero contactá al cliente por WhatsApp para acordar el monto — el sistema no lo calcula solo. Cargá ese número en <kbd class="ui-label">Monto final acordado (USD)</kbd> antes de aprobar.</p></div></li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= ADMIN ============================= -->
+  <section class="role-panel" data-panel="admin">
+    <div class="intro">
+      <p class="eyebrow">Rol Administrador</p>
+      <h1>Operación de la plataforma</h1>
+      <p class="lede">Todo lo que ve un Asesor, pero para el tenant completo, más la gestión de usuarios, catálogo de mercado y métricas.</p>
+    </div>
+
+    <div class="layout-grid">
+      <nav class="side-nav" data-nav-for="admin">
+        <a href="#ad-usuarios" class="current">Usuarios</a>
+        <a href="#ad-clientes">Clientes</a>
+        <a href="#ad-depositos">Depósitos</a>
+        <a href="#ad-retiros">Retiros</a>
+        <a href="#ad-instrumentos">Instrumentos</a>
+        <a href="#ad-metricas">Métricas</a>
+        <a href="#ad-auditoria">Auditoría</a>
+        <a href="#ad-notas">Notas operativas</a>
+      </nav>
+
+      <div class="content">
+        <section class="feature" id="ad-usuarios">
+          <div class="feature-head"><h2>Usuarios</h2><span class="route-chip">/admin/users</span></div>
+          <p class="feature-dek">Única vía para crear cuentas de Asesor o Administrador — el registro público solo crea Clientes.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Tocá <strong class="ui">Nuevo usuario</strong>, completá nombre, email, contraseña y elegí el rol.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Para cambiar el rol de alguien ya creado, usá el selector de rol en su fila de la tabla.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="feature" id="ad-clientes">
+          <div class="feature-head"><h2>Clientes</h2><span class="route-chip">/admin/clients</span></div>
+          <p class="feature-dek">Asigná cada cliente a un Asesor y gestioná su estado de cuenta (Activo, En mora, En proceso de retiro, Finalizado) desde los selectores de cada fila.</p>
+          <div class="callout warn">
+            <span class="label">Antes de asignar —</span>
+            <span>necesitás al menos un usuario con rol Asesor creado; si no hay ninguno, esta pantalla te lo va a recordar.</span>
+          </div>
+        </section>
+
+        <section class="feature" id="ad-depositos">
+          <div class="feature-head"><h2>Depósitos</h2><span class="route-chip">/admin/deposits</span></div>
+          <p class="feature-dek">Misma cola que ve un Asesor, pero de todos los clientes del tenant — útil si un cliente no tiene asesor asignado, o para supervisión general.</p>
+        </section>
+
+        <section class="feature" id="ad-retiros">
+          <div class="feature-head"><h2>Retiros</h2><span class="route-chip">/admin/withdrawals</span></div>
+          <p class="feature-dek">Igual que Asesor (aprobar/rechazar, negociar monto en retiros definitivos anticipados), más un paso extra que solo ve Administrador.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Una vez que un retiro está <span class="pill" style="background:var(--code-bg); color:var(--ink);">Aprobado</span>, alguien ejecuta la transferencia on-chain manualmente, por fuera de la plataforma.</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Volvé a esa fila, pegá el hash de esa transferencia de salida y tocá <strong class="ui">Marcar en curso</strong>. La plataforma verifica ese hash y cierra el retiro sola cuando confirma.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="feature" id="ad-instrumentos">
+          <div class="feature-head"><h2>Instrumentos</h2><span class="route-chip">/admin/instruments</span></div>
+          <p class="feature-dek">El catálogo de mercado que ven los clientes en su pestaña Mercado.</p>
+          <ol class="steps" style="list-style:none;">
+            <li><span class="step-num">1</span><div class="step-body"><p>Tocá <strong class="ui">Habilitar instrumento</strong>, cargá símbolo (ticker), nombre y clase de activo (Acciones, Divisas, Mixto).</p></div></li>
+            <li><span class="step-num">2</span><div class="step-body"><p>Un instrumento con posiciones abiertas de clientes se puede desactivar (deja de poder comprarse) pero sigue cotizando y visible en las carteras existentes.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="feature" id="ad-metricas">
+          <div class="feature-head"><h2>Métricas</h2><span class="route-chip">/admin/metrics</span></div>
+          <p class="feature-dek">Capital captado, ticket promedio, frecuencia de fondeo, clientes nuevos del mes, tasa de renovación y de salida anticipada — totales del tenant y desglosados por asesor.</p>
+        </section>
+
+        <section class="feature" id="ad-auditoria">
+          <div class="feature-head"><h2>Auditoría</h2><span class="route-chip">/admin/audit</span></div>
+          <p class="feature-dek">Registro de acciones sensibles (aprobaciones, rechazos, cambios de rol, cambios de wallet) para trazabilidad — de solo lectura.</p>
+        </section>
+
+        <section class="feature" id="ad-notas">
+          <div class="feature-head"><h2>Notas operativas</h2></div>
+          <p class="feature-dek">Cosas que como Administrador conviene tener presentes hoy — no son bugs, son pendientes conocidos.</p>
+          <div class="callout bad">
+            <span class="label">Acuerdo legal —</span>
+            <span>el texto del Acuerdo de Gestión Discrecional que aceptan los clientes es un <strong>placeholder</strong>, pendiente de revisión legal. Reemplazarlo antes de operar con clientes reales.</span>
+          </div>
+          <div class="callout warn">
+            <span class="label">Emails —</span>
+            <span>el reset de contraseña por email todavía no tiene credenciales de SMTP cargadas. Hasta que se configure, resolvé los olvidos de contraseña manualmente.</span>
+          </div>
+          <div class="callout warn">
+            <span class="label">Cotizaciones y verificación cripto —</span>
+            <span>si un instrumento muestra "Sin cotización", o un depósito no verifica, puede ser que falten las API keys externas (Finnhub para precios; TronGrid/Tronscan/Polygonscan para depósitos). No es un error de uso.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="manual-footer">
+  AVRE Capital Group — manual de referencia interno. Refleja las pantallas activas de la plataforma; actualizalo si algo cambia.
+</footer>
+
+<script>
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.role-panel');
+
+  function activateTab(name) {
+    tabButtons.forEach((b) => {
+      const isActive = b.dataset.tab === name;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', String(isActive));
+    });
+    panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === name));
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+  });
+
+  // Resalta el link del side-nav correspondiente a la sección visible.
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.id;
+        document.querySelectorAll('.side-nav a').forEach((a) => {
+          a.classList.toggle('current', a.getAttribute('href') === '#' + id);
+        });
+      });
+    },
+    { rootMargin: '-110px 0px -70% 0px', threshold: 0 },
+  );
+  document.querySelectorAll('section.feature[id]').forEach((s) => observer.observe(s));
+</script>
