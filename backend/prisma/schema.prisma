@@ -403,6 +403,10 @@ model Instrument {
   symbol     String       @unique // ticker del proveedor, ej. "AAPL", "EURUSD"
   name       String
   assetClass ContractType
+  // Sector para agrupar el treemap de Mercado (§4.1) — ej. "Technology",
+  // "Finance". Libre (no enum): la taxonomía real depende del proveedor de
+  // datos que se termine de configurar. "Otros" si no se especifica.
+  sector     String       @default("Otros")
   exchange   String?
   createdAt  DateTime     @default(now())
 

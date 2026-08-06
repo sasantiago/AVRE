@@ -7,6 +7,7 @@ export interface CreateInstrumentInput {
   symbol: string;
   name: string;
   assetClass: ContractType;
+  sector?: string;
   exchange?: string;
 }
 
@@ -28,6 +29,7 @@ export class InstrumentRepository {
         symbol: input.symbol,
         name: input.name,
         assetClass: input.assetClass,
+        ...(input.sector ? { sector: input.sector } : {}),
         exchange: input.exchange,
       },
     });

@@ -14,6 +14,13 @@ export class CreateInstrumentDto {
   @IsEnum(ContractType)
   assetClass!: ContractType;
 
+  // Sector para agrupar el treemap de Mercado (§4.1) — ej. "Technology",
+  // "Finance". Si no se especifica, queda "Otros" (default del schema).
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  sector?: string;
+
   @IsOptional()
   @IsString()
   exchange?: string;
