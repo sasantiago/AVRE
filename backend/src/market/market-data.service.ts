@@ -43,8 +43,23 @@ export class MarketDataService {
     private readonly config: ConfigService,
   ) {}
 
+  // Usado por MarketQuoteRefreshService (ciclo de fondo, § refresco de
+  // cotizaciones): pide directo a Finnhub y deja la caché fresca, sin pasar
+  // por el stampede lock (acá no hay concurrencia — es un solo loop
+  // secuencial) ni por getQuote (que preferiría leer la caché que este mismo
+  // método está por escribir).
+  async refreshAndCache(symbol: string, assetClass: ContractType): Promise<Quote> {
+    const quote = await this.fetchFromFinnhub(symbol, assetClass);
+    await this.tryRedisSet(this.cacheKeyFor(symbol), quote);
+    return quote;
+  }
+
+  private cacheKeyFor(symbol: string): string {
+    return `market:quote:${symbol}`;
+  }
+
   async getQuote(symbol: string, assetClass: ContractType): Promise<Quote> {
-    const cacheKey = `market:quote:${symbol}`;
+    const cacheKey = this.cacheKeyFor(symbol);
     const cached = await this.tryRedisGet(cacheKey);
     if (cached.value) {
       return this.parseCached(cached.value);

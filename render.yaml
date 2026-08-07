@@ -159,8 +159,14 @@ services:
         value: https://finnhub.io/api/v1
       - key: FINNHUB_API_KEY
         sync: false
+      # Espaciado entre símbolo y símbolo en el ciclo de fondo que mantiene
+      # la caché de cotizaciones fresca (MarketQuoteRefreshService) — ver
+      # .env.example para el detalle completo del trade-off con el límite
+      # de Finnhub.
+      - key: MARKET_REFRESH_DELAY_MS
+        value: "1200"
       - key: MARKET_QUOTE_CACHE_TTL_MS
-        value: "15000"
+        value: "180000"
 
       # ---- Multi-tenancy / seed
       - key: DEFAULT_TENANT_SLUG

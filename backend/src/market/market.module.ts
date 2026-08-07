@@ -6,6 +6,7 @@ import { AuditModule } from '../audit/audit.module';
 import { ClientMarketController } from './client-market.controller';
 import { InstrumentRepository } from './instrument.repository';
 import { MarketDataService } from './market-data.service';
+import { MarketQuoteRefreshService } from './market-quote-refresh.service';
 import { MarketService } from './market.service';
 import { REDIS_CLIENT } from './redis-client.token';
 
@@ -15,6 +16,7 @@ import { REDIS_CLIENT } from './redis-client.token';
   providers: [
     InstrumentRepository,
     MarketDataService,
+    MarketQuoteRefreshService,
     MarketService,
     {
       provide: REDIS_CLIENT,
