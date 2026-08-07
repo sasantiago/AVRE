@@ -7,10 +7,15 @@ import { REDIS_CLIENT } from './redis-client.token';
 export interface Quote {
   price: Prisma.Decimal;
   asOf: Date;
+  // % de variación respecto al cierre anterior — null si Finnhub no lo trae
+  // (ej. instrumento recién listado, sin cierre previo). Usado para colorear
+  // el treemap de Mercado (§4.1), no afecta la cotización de compra.
+  changePct: number | null;
 }
 
 interface FinnhubQuoteResponse {
   c?: number; // current price
+  dp?: number; // % change vs. cierre anterior
   t?: number; // timestamp unix (segundos)
 }
 
@@ -94,12 +99,17 @@ export class MarketDataService {
     return {
       price: new Prisma.Decimal(body.c),
       asOf: body.t ? new Date(body.t * 1000) : new Date(),
+      changePct: typeof body.dp === 'number' ? body.dp : null,
     };
   }
 
   private parseCached(raw: string): Quote {
-    const parsed = JSON.parse(raw) as { price: string; asOf: string };
-    return { price: new Prisma.Decimal(parsed.price), asOf: new Date(parsed.asOf) };
+    const parsed = JSON.parse(raw) as { price: string; asOf: string; changePct: number | null };
+    return {
+      price: new Prisma.Decimal(parsed.price),
+      asOf: new Date(parsed.asOf),
+      changePct: parsed.changePct,
+    };
   }
 
   private async tryRedisGet(key: string): Promise<RedisResult<string>> {
@@ -116,7 +126,11 @@ export class MarketDataService {
       const ttlMs = Number(this.config.get<string>('MARKET_QUOTE_CACHE_TTL_MS') ?? '15000');
       await this.redis.set(
         key,
-        JSON.stringify({ price: quote.price.toString(), asOf: quote.asOf.toISOString() }),
+        JSON.stringify({
+          price: quote.price.toString(),
+          asOf: quote.asOf.toISOString(),
+          changePct: quote.changePct,
+        }),
         'PX',
         ttlMs,
       );

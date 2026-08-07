@@ -88,6 +88,7 @@ export interface Deposit {
   txHash: string | null;
   status: DepositStatus;
   verifiedAmountUsd: string | null;
+  receiptImageUrl: string | null;
   sourceWalletAddress: string | null;
   confirmations: number | null;
   expiresAt: string;
@@ -168,6 +169,7 @@ export interface Instrument {
   symbol: string;
   name: string;
   assetClass: ContractType;
+  sector: string;
   exchange: string | null;
 }
 
@@ -177,7 +179,7 @@ export interface TenantInstrumentWithQuote {
   instrumentId: string;
   isActive: boolean;
   instrument: Instrument;
-  quote: { price: string; asOf: string } | null;
+  quote: { price: string; asOf: string; changePct: number | null } | null;
   quoteError: string | null;
 }
 

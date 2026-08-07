@@ -72,6 +72,7 @@ export function DepositsQueue({ basePath }: { basePath: '/advisor/deposits' | '/
             <TableHeadCell>Red</TableHeadCell>
             <TableHeadCell>Declarado</TableHeadCell>
             <TableHeadCell>Verificado</TableHeadCell>
+            <TableHeadCell>Comprobante</TableHeadCell>
             <TableHeadCell>Estado</TableHeadCell>
             <TableHeadCell>Alertas</TableHeadCell>
             <TableHeadCell>Acciones</TableHeadCell>
@@ -83,6 +84,19 @@ export function DepositsQueue({ basePath }: { basePath: '/advisor/deposits' | '/
               <TableCell className="text-slate-50">{CHAIN_NETWORK_LABELS[d.chain]}</TableCell>
               <TableCell>{d.declaredAmountToken}</TableCell>
               <TableCell>{d.verifiedAmountUsd ?? '—'}</TableCell>
+              <TableCell>
+                {d.receiptImageUrl ? (
+                  <a href={d.receiptImageUrl} target="_blank" rel="noreferrer">
+                    <img
+                      src={d.receiptImageUrl}
+                      alt="Comprobante"
+                      className="h-10 w-10 rounded-md border border-slate-50/10 object-cover"
+                    />
+                  </a>
+                ) : (
+                  '—'
+                )}
+              </TableCell>
               <TableCell>
                 <Badge tone={DEPOSIT_STATUS_TONE[d.status]}>{DEPOSIT_STATUS_LABELS[d.status]}</Badge>
               </TableCell>
@@ -121,7 +135,7 @@ export function DepositsQueue({ basePath }: { basePath: '/advisor/deposits' | '/
           ))}
           {deposits.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-slate-500">
+              <TableCell colSpan={7} className="text-center text-slate-500">
                 No hay depósitos pendientes de revisión.
               </TableCell>
             </TableRow>

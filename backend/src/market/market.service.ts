@@ -6,7 +6,7 @@ import { InstrumentRepository, TenantInstrumentWithInstrument } from './instrume
 import { MarketDataService } from './market-data.service';
 
 export interface TenantInstrumentWithQuote extends TenantInstrumentWithInstrument {
-  quote: { price: string; asOf: Date } | null;
+  quote: { price: string; asOf: Date; changePct: number | null } | null;
   quoteError: string | null;
 }
 
@@ -81,7 +81,7 @@ export class MarketService {
       );
       return {
         ...ti,
-        quote: { price: quote.price.toString(), asOf: quote.asOf },
+        quote: { price: quote.price.toString(), asOf: quote.asOf, changePct: quote.changePct },
         quoteError: null,
       };
     } catch (err) {

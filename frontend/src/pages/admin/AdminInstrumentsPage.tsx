@@ -16,7 +16,13 @@ export default function AdminInstrumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const [form, setForm] = useState({ symbol: '', name: '', assetClass: 'STOCKS' as ContractType, exchange: '' });
+  const [form, setForm] = useState({
+    symbol: '',
+    name: '',
+    assetClass: 'STOCKS' as ContractType,
+    sector: '',
+    exchange: '',
+  });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -44,9 +50,13 @@ export default function AdminInstrumentsPage() {
     try {
       await apiFetch('/admin/instruments', {
         method: 'POST',
-        body: JSON.stringify({ ...form, exchange: form.exchange || undefined }),
+        body: JSON.stringify({
+          ...form,
+          sector: form.sector || undefined,
+          exchange: form.exchange || undefined,
+        }),
       });
-      setForm({ symbol: '', name: '', assetClass: 'STOCKS', exchange: '' });
+      setForm({ symbol: '', name: '', assetClass: 'STOCKS', sector: '', exchange: '' });
       setShowForm(false);
       await load();
     } catch (err) {
@@ -116,6 +126,15 @@ export default function AdminInstrumentsPage() {
                   <option value="FOREX">Divisas</option>
                   <option value="MIXED">Mixto</option>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="sector">Sector (para el mapa de mercado)</Label>
+                <Input
+                  id="sector"
+                  placeholder="ej. Technology, Finance, Energy"
+                  value={form.sector}
+                  onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="exchange">Exchange (opcional)</Label>
