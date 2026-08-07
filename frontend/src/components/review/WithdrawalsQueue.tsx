@@ -171,7 +171,7 @@ export function WithdrawalsQueue({
                 {canMarkProcessing && w.status === 'APPROVED' && (
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Hash de transferencia de salida"
+                      placeholder="ID de transferencia de salida"
                       className="h-9 w-48"
                       value={txHashDrafts[w.id] ?? ''}
                       onChange={(e) => setTxHashDrafts((v) => ({ ...v, [w.id]: e.target.value }))}

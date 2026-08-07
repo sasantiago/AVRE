@@ -105,10 +105,10 @@ function DepositReceiveCard({
 
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
             <div>
-              <Label htmlFor={`hash-${deposit.id}`}>Hash de la transacción</Label>
+              <Label htmlFor={`hash-${deposit.id}`}>ID de transacción</Label>
               <Input
                 id={`hash-${deposit.id}`}
-                placeholder="Pegá el hash de tu transacción"
+                placeholder="Pegá el ID de tu transacción"
                 value={txHash}
                 onChange={(e) => setTxHash(e.target.value)}
               />
@@ -124,7 +124,7 @@ function DepositReceiveCard({
                 className="block w-full text-xs text-slate-400 file:mr-3 file:rounded-full file:border-0 file:bg-slate-800/60 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-200 hover:file:bg-slate-700/60"
               />
               <p className="mt-1 text-xs text-slate-500">
-                Respaldo visual para quien lo revisa — la verificación real es siempre el hash.
+                Respaldo visual para quien lo revisa — la verificación real es siempre el ID de transacción.
               </p>
               {compressing && <p className="mt-1 text-xs text-slate-500">Procesando imagen…</p>}
               {receiptPreview && (
